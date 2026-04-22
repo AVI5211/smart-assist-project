@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: smartassist-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: smart_assist
+      MYSQL_USER: user
+      MYSQL_PASSWORD: user123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    container_name: smartassist-backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: on-failure
+    environment:
+      DB_HOST: mysql
+      DB_USER: user
+      DB_PASSWORD: user123
+      DB_NAME: smart_assist
+
+  frontend:
+    build: ./frontend
+    container_name: smartassist-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
